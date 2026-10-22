@@ -1,10 +1,46 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { getSession, streamChat } from './api'
 import { loadHistory, saveExchange } from './history'
 import type { LocalExchange } from './types'
 
 function countCodePoints(value: string): number {
   return Array.from(value.trim()).length
+}
+
+const HISTORY_PREVIEW_LENGTH = 180
+
+function HistoryItem({ item }: { item: LocalExchange }) {
+  const [expanded, setExpanded] = useState(false)
+  const answerPoints = Array.from(item.answer)
+  const isLong = answerPoints.length > HISTORY_PREVIEW_LENGTH
+  const preview = answerPoints.slice(0, HISTORY_PREVIEW_LENGTH).join('') + '...'
+
+  return (
+    <li className="history-item">
+      <strong className="history-prompt">{item.prompt}</strong>
+      {isLong && !expanded ? (
+        <p className="history-preview">{preview}</p>
+      ) : (
+        <div className="history-answer markdown-body">
+          <ReactMarkdown skipHtml>{item.answer}</ReactMarkdown>
+        </div>
+      )}
+      {isLong && (
+        <button
+          type="button"
+          className="history-toggle"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((current) => !current)}
+        >
+          {expanded ? 'Свернуть' : 'Показать полностью'}
+        </button>
+      )}
+      <time dateTime={item.createdAt}>
+        {new Date(item.createdAt).toLocaleString('ru-RU')}
+      </time>
+    </li>
+  )
 }
 
 export default function App() {
@@ -15,6 +51,7 @@ export default function App() {
   const [requestError, setRequestError] = useState<string | null>(null)
   const [answer, setAnswer] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const sendingRef = useRef(false)
   const [history, setHistory] = useState<LocalExchange[]>([])
 
   useEffect(() => {
@@ -43,6 +80,7 @@ export default function App() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (sendingRef.current) return
     const normalizedPrompt = prompt.trim()
     const length = countCodePoints(normalizedPrompt)
 
@@ -56,6 +94,7 @@ export default function App() {
     }
     if (!sessionId) return
 
+    sendingRef.current = true
     setValidationError(null)
     setRequestError(null)
     setAnswer('')
@@ -66,6 +105,7 @@ export default function App() {
         setAnswer((current) => current + text)
       })
       setAnswer(result.answer)
+      setPrompt((current) => current === prompt ? '' : current)
       if (result.sessionId !== sessionId) setSessionId(result.sessionId)
       try {
         saveExchange(result)
@@ -76,8 +116,15 @@ export default function App() {
     } catch (error) {
       setRequestError(error instanceof Error ? error.message : 'Не удалось получить ответ.')
     } finally {
+      sendingRef.current = false
       setIsSending(false)
     }
+  }
+
+  function handlePromptKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return
+    event.preventDefault()
+    if (!sendingRef.current) event.currentTarget.form?.requestSubmit()
   }
 
   return (
@@ -97,10 +144,11 @@ export default function App() {
           <div className="chat-panel">
             <form onSubmit={handleSubmit} className="prompt-form">
               <label htmlFor="prompt">Ваш запрос</label>
-              <p className="field-hint">Один короткий вопрос — до 500 символов.</p>
+              <p className="field-hint">Один короткий вопрос — до 500 символов. Enter — отправить, Shift+Enter — новая строка.</p>
               <textarea
                 id="prompt"
                 value={prompt}
+                onKeyDown={handlePromptKeyDown}
                 onChange={(event) => {
                   setPrompt(event.target.value)
                   setValidationError(null)
@@ -127,7 +175,9 @@ export default function App() {
               </div>
               {requestError && <p role="alert" className="error-message">{requestError}</p>}
               {answer ? (
-                <section aria-label="Ответ ИИ" aria-live="polite" className="response-text">{answer}</section>
+                <section aria-label="Ответ ИИ" aria-live="polite" className="response-text markdown-body">
+                  <ReactMarkdown skipHtml>{answer}</ReactMarkdown>
+                </section>
               ) : (
                 <p className="response-placeholder">
                   {isSending ? 'Ожидаем первый фрагмент ответа…' : 'Здесь появится ответ на ваш запрос.'}
@@ -146,15 +196,7 @@ export default function App() {
               <p className="history-empty">Пока нет завершённых запросов.</p>
             ) : (
               <ul className="history-list">
-                {history.map((item) => (
-                  <li key={item.id} className="history-item">
-                    <strong>{item.prompt}</strong>
-                    <p>{item.answer}</p>
-                    <time dateTime={item.createdAt}>
-                      {new Date(item.createdAt).toLocaleString('ru-RU')}
-                    </time>
-                  </li>
-                ))}
+                {history.map((item) => <HistoryItem key={item.id} item={item} />)}
               </ul>
             )}
           </aside>

@@ -38,7 +38,7 @@ button:hover:not(:disabled) { background: #2453ae; }
 button:disabled { opacity: .65; cursor: progress; }
 .response-heading, .history-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .response-heading h2, .history-heading h2 { margin: 0; font-size: 19px; }
-.response-text { margin-top: 20px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.response-text { margin-top: 20px; line-height: 1.7; overflow-wrap: anywhere; }
 .response-placeholder { margin: 20px 0 0; color: #718099; }
 .error-message { margin: 14px 0 0; color: #a83232; line-height: 1.5; }
 .history-panel { padding: 24px; }
@@ -47,9 +47,20 @@ button:disabled { opacity: .65; cursor: progress; }
 .history-empty { margin: 0; padding: 20px; border-radius: 10px; background: #f6f8fc; color: #718099; font-size: 14px; }
 .history-list { display: grid; gap: 12px; list-style: none; padding: 0; margin: 0; }
 .history-item { min-width: 0; padding: 16px; border: 1px solid #e2e8f2; border-radius: 12px; }
-.history-item strong { display: -webkit-box; overflow: hidden; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 3; font-size: 14px; }
-.history-item p { margin: 8px 0; color: #52637d; font-size: 13px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
-.history-item time { color: #8794a7; font-size: 11px; }
+.history-prompt { display: -webkit-box; overflow: hidden; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 3; font-size: 14px; }
+.history-item p { margin: 8px 0; color: #52637d; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.history-item time { display: block; margin-top: 8px; color: #8794a7; font-size: 11px; }
+.history-preview { white-space: pre-wrap; }
+.history-toggle { margin-top: 2px; padding: 0; border-radius: 0; background: transparent; color: #2e63c7; font-size: 13px; text-align: left; }
+.history-toggle:hover:not(:disabled) { background: transparent; text-decoration: underline; }
+.history-toggle:focus-visible { outline: 2px solid #2e63c7; outline-offset: 3px; }
+.markdown-body > :first-child { margin-top: 0; }
+.markdown-body > :last-child { margin-bottom: 0; }
+.markdown-body pre { max-width: 100%; overflow-x: auto; padding: 12px; border-radius: 8px; background: #f1f5fa; }
+.markdown-body code { overflow-wrap: anywhere; }
+.markdown-body pre code { overflow-wrap: normal; }
+.markdown-body a { color: #2e63c7; }
+.markdown-body img { max-width: 100%; }
 
 @media (max-width: 800px) {
   .app-shell { padding: 32px 16px 56px; }

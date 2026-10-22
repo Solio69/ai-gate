@@ -40,3 +40,24 @@
 ## Сверка перед коммитом
 
 Passed: состав staged diff сверен со `spec.md`: только файлы спецификации `001-ai-gate-demo`; `git diff --cached --check` не нашёл ошибок пробелов, поиск ключа не дал совпадений. `.env`, `node_modules` и `dist` игнорируются Git. Коммит выполняется в `main`; публикация остаётся следующим этапом после проверки пользователя.
+
+## Дополнительная проверка после UI-правок
+
+| Команда или сценарий | Статус | Результат |
+| --- | --- | --- |
+| Red: npm test -w apps/web -- test/App.test.tsx | Failed, ожидаемый Red | 3 поведенческих падения: Enter не отправлял запрос, ошибка не возникала без отправки, длинная история показывалась целиком. 11 прежних тестов прошли. |
+| Red: npm test -w apps/web -- test/App.test.tsx -t Markdown | Failed, ожидаемый Red | 2 поведенческих падения: текущий ответ не форматировался, в истории не было раскрытия и Markdown. |
+| npm install react-markdown@^10.1.0 -w apps/web | Passed | Добавлена зависимость только web workspace; npm сообщил 0 уязвимостей. |
+| Green: npm test -w apps/web -- test/App.test.tsx | Passed | 16/16 тестов компонента. |
+| npm test -w apps/web | Passed | 23/23 web-теста. |
+| npm run typecheck -w apps/web; npm run build -w apps/web | Passed | Типизация и Vite-сборка web прошли. |
+| npm test --workspaces | Passed | API 24/24, web 23/23, включая интеграционные проверки PostgreSQL. |
+| npm run typecheck --workspaces | Passed | Ошибок TypeScript нет. |
+| npm run build --workspaces | Passed | API и интерфейс собраны. |
+| docker compose config --quiet | Passed | Конфигурация запуска БД из README корректна. |
+| git check-ignore .env; git diff --check | Passed | .env игнорируется; ошибок пробелов в diff нет. Предупреждения Git касались только LF/CRLF. |
+| Сверка README с package.json, compose.yaml, .env.example, путями документации и API-контрактом | Passed | Команды, порты, переменные и относительные ссылки существуют; Mermaid-блок и блоки команд закрыты. |
+| Реальный запрос к OpenRouter после добавления ключа пользователем | NotRun | Этот дополнительный прогон нами не выполнялся. Пользователь проверяет локально; прежняя запись Blocked относилась к состоянию до добавления ключа. |
+| Повторный запуск dev-серверов и ручной браузерный сценарий после этих правок | NotRun | По просьбе пользователя dev-серверы не запускались нами. Изменения проверены тестами и сборкой; ручная приёмка остаётся пользователю. |
+
+Состав изменений после follow-up: web форма, история, Markdown-зависимость, тесты, описания фич, README и артефакты спецификации. API, БД, порты, секреты и локальный .env не изменялись.

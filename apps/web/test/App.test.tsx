@@ -162,3 +162,124 @@ describe('история текущей сессии', () => {
     expect(window.localStorage.getItem(`ai-gate:history:${sessionId}`)).toBeNull()
   })
 })
+
+describe('управление формой с клавиатуры', () => {
+  it('Enter отправляет один запрос и очищает поле после успешного ответа', async () => {
+    let finish!: (result: Exchange) => void
+    vi.mocked(api.streamChat).mockImplementation(() => new Promise<Exchange>((resolve) => {
+      finish = resolve
+    }))
+    render(<App />)
+    const input = await screen.findByRole('textbox', { name: /запрос/i })
+    fireEvent.change(input, { target: { value: 'Привет' } })
+
+    fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' })
+    await waitFor(() => expect(api.streamChat).toHaveBeenCalledOnce())
+    expect((input as HTMLTextAreaElement).value).toBe('Привет')
+
+    fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' })
+    expect(api.streamChat).toHaveBeenCalledOnce()
+
+    finish(exchange('Привет'))
+    await waitFor(() => expect((input as HTMLTextAreaElement).value).toBe(''))
+    expect(screen.getByRole('region', { name: /ответ ИИ/i }).textContent).toContain('Готовый ответ')
+  })
+
+  it('Shift+Enter оставляет возможность новой строки и не отправляет запрос', async () => {
+    render(<App />)
+    const input = await screen.findByRole('textbox', { name: /запрос/i })
+    fireEvent.change(input, { target: { value: 'Первая строка' } })
+
+    const allowedDefault = fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', shiftKey: true })
+
+    expect(allowedDefault).toBe(true)
+    expect(api.streamChat).not.toHaveBeenCalled()
+  })
+
+  it('сохраняет запрос при ошибке и новый текст, набранный во время ответа', async () => {
+    vi.mocked(api.streamChat).mockRejectedValueOnce(new Error('Поток оборвался.'))
+    render(<App />)
+    const input = await screen.findByRole('textbox', { name: /запрос/i })
+    fireEvent.change(input, { target: { value: 'Первый вопрос' } })
+    fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' })
+
+    await screen.findByRole('alert')
+    expect((input as HTMLTextAreaElement).value).toBe('Первый вопрос')
+
+    let finish!: (result: Exchange) => void
+    vi.mocked(api.streamChat).mockImplementationOnce(() => new Promise<Exchange>((resolve) => {
+      finish = resolve
+    }))
+    fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' })
+    await waitFor(() => expect(api.streamChat).toHaveBeenCalledTimes(2))
+    fireEvent.change(input, { target: { value: 'Следующий вопрос' } })
+
+    finish(exchange('Первый вопрос'))
+    await waitFor(() => expect(screen.getByRole('region', { name: /ответ ИИ/i }).textContent).toContain('Готовый ответ'))
+    expect((input as HTMLTextAreaElement).value).toBe('Следующий вопрос')
+  })
+})
+
+describe('сворачивание ответов в истории', () => {
+  it('сокращает длинный ответ до 180 Unicode-символов, раскрывает и снова сворачивает', async () => {
+    const longAnswer = '😀'.repeat(181)
+    window.localStorage.setItem('ai-gate:history:' + sessionId, JSON.stringify([
+      { ...exchange('Вопрос'), answer: longAnswer },
+    ]))
+    const view = render(<App />)
+    const history = await screen.findByRole('complementary', { name: /история/i })
+    const preview = '😀'.repeat(180) + '...'
+    await waitFor(() => expect(within(history).getByText(preview)).not.toBeNull())
+    expect(within(history).queryByText(longAnswer)).toBeNull()
+
+    fireEvent.click(within(history).getByRole('button', { name: /показать полностью/i }))
+    expect(within(history).getByText(longAnswer)).not.toBeNull()
+    fireEvent.click(within(history).getByRole('button', { name: /свернуть/i }))
+    expect(within(history).getByText(preview)).not.toBeNull()
+
+    view.unmount()
+    render(<App />)
+    const restoredHistory = await screen.findByRole('complementary', { name: /история/i })
+    await waitFor(() => expect(within(restoredHistory).getByText(preview)).not.toBeNull())
+    expect(within(restoredHistory).queryByText(longAnswer)).toBeNull()
+  })
+
+  it('показывает короткий ответ полностью без кнопки раскрытия', async () => {
+    window.localStorage.setItem('ai-gate:history:' + sessionId, JSON.stringify([exchange('Вопрос')]))
+    render(<App />)
+    const history = await screen.findByRole('complementary', { name: /история/i })
+    await waitFor(() => expect(within(history).getByText('Готовый ответ')).not.toBeNull())
+    expect(within(history).queryByRole('button', { name: /показать полностью/i })).toBeNull()
+  })
+})
+describe('Markdown в ответе', () => {
+  it('показывает разметку текущего ответа и не создаёт HTML-элемент из сырого текста', async () => {
+    vi.mocked(api.streamChat).mockImplementation(async (prompt) => ({
+      ...exchange(prompt),
+      answer: '**Жирный** и [ссылка](https://example.com)' + '\n\n' + '- пункт' + '\n\n' + '<img src=x onerror=alert(1)>',
+    }))
+    render(<App />)
+    const input = await screen.findByRole('textbox', { name: /запрос/i })
+    fireEvent.change(input, { target: { value: 'Вопрос' } })
+    fireEvent.click(screen.getByRole('button', { name: /отправить/i }))
+
+    const response = await screen.findByRole('region', { name: /ответ ИИ/i })
+    await waitFor(() => expect(within(response).getByText('Жирный').tagName).toBe('STRONG'))
+    expect(within(response).getByRole('link', { name: 'ссылка' }).getAttribute('href')).toBe('https://example.com')
+    expect(response.querySelector('li')?.textContent).toBe('пункт')
+    expect(response.querySelector('img')).toBeNull()
+  })
+
+  it('форматирует полный ответ истории после раскрытия', async () => {
+    const longAnswer = '**Архив** ' + 'текст '.repeat(40)
+    window.localStorage.setItem('ai-gate:history:' + sessionId, JSON.stringify([
+      { ...exchange('Вопрос'), answer: longAnswer },
+    ]))
+    render(<App />)
+    const history = await screen.findByRole('complementary', { name: /история/i })
+    fireEvent.click(await within(history).findByRole('button', { name: /показать полностью/i }))
+
+    expect(within(history).getByText('Архив').tagName).toBe('STRONG')
+    expect(within(history).getByText('Архив').closest('p')?.textContent).toContain('текст')
+  })
+})
