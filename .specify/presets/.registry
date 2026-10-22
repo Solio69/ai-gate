@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "presets": {
+    "codex-code-workflow": {
+      "version": "0.1.0",
+      "source": "local",
+      "manifest_hash": "sha256:972b3af4a2ee5f9c1d309e51627ba963e70d0df844e79bfb08013e09214b2a52",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "agy": [
+          "speckit.specify",
+          "speckit.plan",
+          "speckit.tasks",
+          "speckit.implement"
+        ],
+        "codex": [
+          "speckit.specify",
+          "speckit.plan",
+          "speckit.tasks",
+          "speckit.implement"
+        ]
+      },
+      "registered_skills": [
+        "speckit-specify",
+        "speckit-plan",
+        "speckit-tasks",
+        "speckit-implement"
+      ],
+      "installed_at": "2026-10-22T11:27:37.718771+00:00"
+    }
+  }
+}
