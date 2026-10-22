@@ -1,0 +1,43 @@
+schema_version: "1.0"
+
+preset:
+  id: "codex-code-workflow"
+  name: "Codex Code Workflow"
+  version: "0.1.0"
+  description: "Stack-agnostic Spec Kit templates for an agreed, test-first coding workflow."
+
+requires:
+  speckit_version: ">=0.8.15"
+
+provides:
+  templates:
+    - type: "template"
+      name: "tasks-template"
+      file: "templates/tasks-template.md"
+      strategy: "replace"
+      description: "Require Red, Green, Refactor tasks for code changes."
+    - type: "command"
+      name: "speckit.specify"
+      file: "commands/speckit.specify.md"
+      strategy: "prepend"
+      description: "Carry the agreed grooming outcome into the official specification."
+    - type: "command"
+      name: "speckit.plan"
+      file: "commands/speckit.plan.md"
+      strategy: "prepend"
+      description: "Add TDD and verification choices to the official plan."
+    - type: "command"
+      name: "speckit.tasks"
+      file: "commands/speckit.tasks.md"
+      strategy: "prepend"
+      description: "Tell task generation that TDD is an explicit standing requirement."
+    - type: "command"
+      name: "speckit.implement"
+      file: "commands/speckit.implement.md"
+      strategy: "prepend"
+      description: "Require evidence of Red, Green, Refactor and final verification."
+
+tags:
+  - "codex"
+  - "tdd"
+  - "workflow"

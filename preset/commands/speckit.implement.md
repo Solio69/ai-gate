@@ -1,0 +1,3 @@
+## Standing requirements for this preset
+
+Before changing production behavior, verify the corresponding automated test fails for the expected behavior gap (Red). Then make the smallest implementation pass (Green), refactor if useful, and rerun affected tests. Keep test and production changes within the agreed `spec.md` scope. If no meaningful executable behavior changes, use the alternative verification documented in `plan.md`; do not create a test solely to satisfy a ritual. Record final commands and results in `verification.md` with Passed, Failed, Blocked, or NotRun. A missing tool, import error, or broken environment is Blocked, not a successful Red. The official implementation workflow follows below.

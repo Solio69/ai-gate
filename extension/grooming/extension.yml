@@ -1,0 +1,20 @@
+schema_version: "1.0"
+
+extension:
+  id: "grooming"
+  name: "Code Task Grooming"
+  version: "0.1.0"
+  description: "Discuss a bounded code task before Spec Kit specification and implementation."
+
+requires:
+  speckit_version: ">=0.8.15"
+
+provides:
+  commands:
+    - name: "speckit.grooming.prepare"
+      file: "commands/prepare.md"
+      description: "Inspect context, compare options, agree scope and hand off to speckit.specify."
+
+tags:
+  - "grooming"
+  - "codex"
