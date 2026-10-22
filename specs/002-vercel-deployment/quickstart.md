@@ -2,8 +2,8 @@
 
 Этот документ применяется после подготовки кода и публикации коммита в GitHub. Пока ресурс Vercel/Neon не создан, облачный сценарий считается `NotRun`.
 
-1. Войти в Vercel через GitHub. Импортировать `Solio69/ai-gate` как **один** проект с Root Directory = корень репозитория. Сборка и выходная директория заданы в `vercel.json`.
-2. На импорте выбрать Hobby/Free. Добавить `COOKIE_SECRET` (длинная случайная строка), `OPENROUTER_API_KEY` и `OPENROUTER_MODEL=openrouter/free` для Production. Значения хранить только в настройках Vercel, не присылать в чат.
+1. Войти в Vercel через GitHub. Импортировать `Solio69/ai-gate` как **один** проект с Root Directory = корень репозитория. Сборка и выходная директория заданы в `vercel.json`. До добавления переменных из шага 2 не нажимать **Deploy**.
+2. На импорте выбрать Hobby/Free. Добавить `COOKIE_SECRET` (длинная случайная строка), `OPENROUTER_API_KEY` и `OPENROUTER_MODEL=openrouter/free` для Production. Значения хранить только в настройках Vercel, не присылать в чат. Затем нажать **Deploy** и дождаться первой сборки.
 3. В Storage/Marketplace проекта подключить Neon PostgreSQL на тарифе Free к Production. Отдельная ручная регистрация на сайте Neon не нужна при варианте создания через Vercel. Убедиться, что интеграция добавила `DATABASE_URL` для Production; значение не копировать в репозиторий.
 4. Открыть Neon SQL Editor из Storage и один раз выполнить содержимое `db/init.sql`. Проверить наличие таблицы `exchanges`.
 5. Выпустить новый Production deployment после подключения БД и переменных: старые деплои не получают новые значения автоматически.
