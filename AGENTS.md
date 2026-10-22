@@ -35,5 +35,6 @@ These rules apply to development tasks in this repository. Follow the current us
 
 <!-- SPECKIT START -->
 Для сведений о стеке, структуре, локальном запуске и проверках текущей фичи
-читайте specs/001-ai-gate-demo/plan.md.
+читайте specs/002-vercel-deployment/plan.md.
 <!-- SPECKIT END -->
+
