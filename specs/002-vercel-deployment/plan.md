@@ -52,19 +52,19 @@ specs/002-vercel-deployment/
 
 ```text
 api/
-├── chat.ts             # Vercel entrypoint POST /api/chat
-└── session.ts          # Vercel entrypoint GET /api/session
+├── chat.js             # Vercel entrypoint POST /api/chat
+└── session.js          # Vercel entrypoint GET /api/session
 apps/api/src/
 ├── app.ts              # прежняя бизнес-логика Express
 ├── server.ts           # прежний локальный listener
 └── vercel.ts           # общий экземпляр Express для Vercel
 apps/web/               # без изменения поведения
-vercel.json             # сборка Vite из корня монорепозитория
+vercel.json             # сборка Vite и включение собранного API в Functions
 db/init.sql            # существующая схема, применяется в облачной БД
 docs/05-vercel-deploy.md
 ```
 
-**Structure Decision**: корневой `api/` соответствует файловым маршрутам Vercel; оба entrypoint переиспользуют один Express app из `apps/api/src/vercel.ts`. `apps/api/src/server.ts` остаётся точкой локального запуска. Корневой проект Vercel собирает `apps/web/dist`.
+**Structure Decision**: корневой `api/` соответствует файловым маршрутам Vercel. JS-entrypoint импортируют собранный `apps/api/dist/vercel.js`; скрипт `vercel-build` создаёт `dist` до упаковки Functions, а `includeFiles` включает его в них. `apps/api/src/server.ts` остаётся точкой локального запуска. Корневой проект Vercel собирает `apps/web/dist`.
 
 ## Phase 0: Research
 
@@ -79,7 +79,7 @@ docs/05-vercel-deploy.md
 
 ## Test-first and verification plan
 
-Адаптер Vercel и конфигурация не вводят новое прикладное поведение. Осмысленный Red-тест на повторение двух строк импорта не нужен. Проверить, что `npm run typecheck --workspaces` и `npm run build --workspaces` проходят после изменений, что `api/` содержит только нужные Functions, что `vercel.json` указывает на реальный `apps/web/dist`, а `git diff --check` чист. Существующие `npm test --workspaces` запускать только против локальной тестовой PostgreSQL: интеграционные тесты пишут и удаляют строки.
+Адаптер Vercel и конфигурация не вводят новое прикладное поведение. После первого Production deployment выявлена ошибка упаковки: скомпилированная Function импортировала отсутствующий исходный `.ts` файл. Добавлена осмысленная проверка `npm run test:vercel-runtime`: она воспроизвела `ERR_MODULE_NOT_FOUND` до исправления (Red) и проверяет импорт из изолированного runtime-снимка после сборки (Green). Проверить, что `npm run typecheck --workspaces` и `npm run build --workspaces` проходят после изменений, что `api/` содержит только нужные Functions, что `vercel.json` указывает на реальный `apps/web/dist`, а `git diff --check` чист. Существующие `npm test --workspaces` запускать только против локальной тестовой PostgreSQL: интеграционные тесты пишут и удаляют строки.
 
 Если обнаружится необходимость изменить cookie, streaming, обработку ошибки или запись в БД, сначала добавить поведенческий API-тест и получить падение именно по этому требованию (Red), затем минимально исправить код (Green) и повторить затронутые тесты после рефакторинга.
 

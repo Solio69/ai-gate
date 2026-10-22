@@ -16,9 +16,9 @@
 **Independent Test**: сборка Vercel и браузерный запрос показывают хотя бы один `delta` до `done`.
 
 - [x] T004 [US1] Добавить общий серверный адаптер `apps/api/src/vercel.ts`, переиспользующий `createApp`, без `listen`.
-- [x] T005 [US1] Добавить `api/session.ts` и `api/chat.ts` как файловые Node Functions для существующих HTTP-маршрутов.
-- [x] T006 [US1] Добавить корневой `vercel.json` для Vite-сборки `apps/web/dist` из монорепозитория.
-- [x] T007 [US1] Проверить `npm run typecheck --workspaces` и `npm run build --workspaces`; проверить `vercel.json`, маршруты и отсутствие серверного ключа в web bundle.
+- [x] T005 [US1] Добавить `api/session.js` и `api/chat.js` как файловые Node Functions, импортирующие собранный API для существующих HTTP-маршрутов.
+- [x] T006 [US1] Добавить корневой `vercel.json` для Vite-сборки `apps/web/dist` и `includeFiles`; скрипт `vercel-build` собирает API до упаковки.
+- [x] T007 [US1] Проверить `npm run test:vercel-runtime`, `npm run typecheck --workspaces` и `npm run build --workspaces`; проверить `vercel.json`, маршруты и отсутствие серверного ключа в web bundle.
 
 ## Phase 3: PostgreSQL и история — User Story 2 (P2)
 
@@ -34,8 +34,8 @@
 ## Phase 4: Публикация и приёмка
 
 - [x] T012 Проверить `git diff --check`, состав изменений, отсутствие секретов, записать локальные проверки в `verification.md`.
-- [ ] T013 Создать согласованный коммит в `main` с названием, связанным с `002-vercel-deployment`.
-- [ ] T014 После отдельного разрешения на push отправить коммит в GitHub; пользователь импортирует репозиторий в Vercel Hobby.
+- [x] T013 Создать согласованный коммит в `main` с названием, связанным с `002-vercel-deployment`.
+- [x] T014 После отдельного разрешения на push отправить коммит в GitHub; пользователь импортирует репозиторий в Vercel Hobby.
 - [ ] T015 Вместе с пользователем подключить Neon Free через Vercel Marketplace, секреты и выполнить `db/init.sql` в SQL Editor.
 - [ ] T016 Проверить Production deployment: форма, cookie, `delta` до `done`, ровно одна новая строка с полным текстом и ID сессии в PostgreSQL, reload, инкогнито; записать фактические результаты в `verification.md`.
 - [ ] T017 После облачной приёмки создать отдельный коммит с итоговым `verification.md` в `main`.
