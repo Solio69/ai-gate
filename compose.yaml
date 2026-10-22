@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ai_gate
+      POSTGRES_USER: ai_gate
+      POSTGRES_PASSWORD: ai_gate
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - ai_gate_pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ai_gate -d ai_gate"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  ai_gate_pgdata:

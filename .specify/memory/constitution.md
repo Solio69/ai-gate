@@ -1,50 +1,69 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+- Версия: шаблон без принятой версии → 1.0.0 (первое утверждение).
+- Принципы: пять шаблонных разделов заменены согласованными правилами проекта.
+- Добавлены разделы: дополнительные ограничения и процесс разработки.
+- Шаблоны: .specify/templates/plan-template.md и spec-template.md проверены, изменений не требуют;
+  .specify/templates/tasks-template.md обновлён: тесты обязательны для проверяемого поведения.
+- Отложенных пунктов нет.
+-->
+# AI Gate Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Согласованный минимальный объём
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+Каждая фича MUST реализовывать только согласованный сценарий и его критерии приёмки.
+Новые действия пользователя или серверные возможности требуют отдельного обсуждения.
+Это сохраняет тестовое приложение небольшим и проверяемым.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### II. Секреты и анонимная сессия
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+Ключ AI-гейта и реквизиты базы MUST находиться только на сервере.
+Сервер MUST привязывать записи истории к анонимной cookie-сессии.
+Клиентское хранилище MUST NOT содержать секреты.
+Эти правила защищают доступ к платным внешним сервисам и разделяют данные сессий.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### III. Тесты до реализации поведения
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+Для каждого нового или изменённого проверяемого поведения MUST применяться цикл
+Red → Green → Refactor: сначала осмысленный падающий тест, затем минимальная реализация,
+затем повторный прогон. Ошибки установки и окружения не считаются этапом Red.
+Для документации и конфигурации применяется соразмерная проверка вместо искусственного теста.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### IV. Понятная документация по фичам
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+Каждая завершённая фича MUST иметь русскоязычное описание в `docs/`:
+что видит пользователь, какие слои изменены и как проверить результат.
+Spec Kit артефакты MUST отражать согласованные требования и фактическую реализацию.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### V. Проверенный локальный запуск
+
+Перед передачей результата MUST быть выполнены применимые тесты и проверен локальный
+сквозной сценарий. Выполненные команды и их результаты MUST фиксироваться в
+`verification.md`; непроведённая проверка не может называться успешной.
+
+## Дополнительные ограничения
+
+Текущий согласованный объём: анонимная форма, запрос к AI-гейту с потоковым ответом,
+история пар запрос–ответ в PostgreSQL по сессии и локальная история браузера.
+Рабочий ключ и значения подключения не входят в репозиторий.
+Публикация следует после локальной проверки пользователем.
+
+## Процесс разработки
+
+Перед кодом проходят груминг, `spec.md`, `plan.md`, `tasks.md` и анализ их
+согласованности. Полный отчёт анализа сохраняется отдельным действием в `analysis.md`.
+Фичи реализуются с проверками по задачам, а затем сверяются со спецификацией.
+Коммиты содержат только изменения текущей задачи; ветка и право на коммит
+определяются явным запросом пользователя.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+Конституция применяется при планировании и проверке каждой фичи.
+Изменение принципов требует обсуждения с пользователем и обновления связанных
+шаблонов и артефактов. Версия меняется по SemVer: MAJOR для несовместимого
+изменения правил, MINOR для нового принципа, PATCH для уточнения формулировки.
+Перед завершением фичи проверяется соответствие всем обязательным принципам.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-10-22 | **Last Amended**: 2026-10-22

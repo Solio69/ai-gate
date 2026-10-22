@@ -34,6 +34,6 @@ These rules apply to development tasks in this repository. Follow the current us
 - Follow any stricter project Git policy. Never include someone else's changes in your commit.
 
 <!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+Для сведений о стеке, структуре, локальном запуске и проверках текущей фичи
+читайте specs/001-ai-gate-demo/plan.md.
 <!-- SPECKIT END -->
