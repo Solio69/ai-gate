@@ -129,7 +129,10 @@ describe('история текущей сессии', () => {
     render(<App />)
 
     const history = await screen.findByRole('complementary', { name: /история/i })
-    await waitFor(() => expect(within(history).getByText('Готовый ответ')).not.toBeNull())
+    await waitFor(() => expect(within(history).getByText('Привет')).not.toBeNull())
+    expect(within(history).queryByText('Готовый ответ')).toBeNull()
+    fireEvent.click(within(history).getByRole('button', { name: 'Развернуть' }))
+    expect(within(history).getByText('Готовый ответ')).not.toBeNull()
   })
 
   it('новой сессии показывает только её локальные пары', async () => {
@@ -144,8 +147,11 @@ describe('история текущей сессии', () => {
     render(<App />)
 
     const history = await screen.findByRole('complementary', { name: /история/i })
-    await waitFor(() => expect(within(history).getByText('Новый ответ')).not.toBeNull())
-    expect(within(history).queryByText('Старый ответ')).toBeNull()
+    await waitFor(() => expect(within(history).getByText('Новый вопрос')).not.toBeNull())
+    expect(within(history).queryByText('Старый вопрос')).toBeNull()
+    expect(within(history).queryByText('Новый ответ')).toBeNull()
+    fireEvent.click(within(history).getByRole('button', { name: 'Развернуть' }))
+    expect(within(history).getByText('Новый ответ')).not.toBeNull()
   })
 
   it('при ошибке не сохраняет частичный ответ как завершённый', async () => {
@@ -221,37 +227,80 @@ describe('управление формой с клавиатуры', () => {
 })
 
 describe('сворачивание ответов в истории', () => {
-  it('сокращает длинный ответ до 180 Unicode-символов, раскрывает и снова сворачивает', async () => {
-    const longAnswer = '😀'.repeat(181)
+  it('показывает только заголовок и кнопку для короткого ответа; дата видна после раскрытия', async () => {
+    window.localStorage.setItem('ai-gate:history:' + sessionId, JSON.stringify([exchange('Вопрос')]))
+    render(<App />)
+    const history = await screen.findByRole('complementary', { name: /история/i })
+    const heading = await within(history).findByRole('heading', { name: 'Вопрос' })
+    const item = heading.closest('li')!
+    const toggle = within(item).getByRole('button', { name: 'Развернуть' })
+
+    expect(heading.parentElement?.contains(toggle)).toBe(true)
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    expect(within(item).queryByText('Готовый ответ')).toBeNull()
+    expect(item.querySelector('time')).toBeNull()
+
+    fireEvent.click(toggle)
+    expect(within(item).getByText('Готовый ответ')).not.toBeNull()
+    expect(item.querySelector('time')?.dateTime).toBe('2026-10-22T10:30:00.000Z')
+    expect(within(item).getByRole('button', { name: 'Свернуть' }).getAttribute('aria-expanded')).toBe('true')
+
+    fireEvent.click(within(item).getByRole('button', { name: 'Свернуть' }))
+    expect(within(item).queryByText('Готовый ответ')).toBeNull()
+    expect(item.querySelector('time')).toBeNull()
+  })
+
+  it('скрывает весь длинный Markdown без текстового фрагмента и снова сворачивает после reload', async () => {
+    const longAnswer = '### Архивный ответ\n\n' + 'текст '.repeat(40) + '\n\n**Конец**'
     window.localStorage.setItem('ai-gate:history:' + sessionId, JSON.stringify([
-      { ...exchange('Вопрос'), answer: longAnswer },
+      { ...exchange('Длинный вопрос'), answer: longAnswer },
     ]))
     const view = render(<App />)
     const history = await screen.findByRole('complementary', { name: /история/i })
-    const preview = '😀'.repeat(180) + '...'
-    await waitFor(() => expect(within(history).getByText(preview)).not.toBeNull())
-    expect(within(history).queryByText(longAnswer)).toBeNull()
+    const prompt = await within(history).findByRole('heading', { name: 'Длинный вопрос' })
+    const item = prompt.closest('li')!
 
-    fireEvent.click(within(history).getByRole('button', { name: /показать полностью/i }))
-    expect(within(history).getByText(longAnswer)).not.toBeNull()
-    fireEvent.click(within(history).getByRole('button', { name: /свернуть/i }))
-    expect(within(history).getByText(preview)).not.toBeNull()
+    expect(item.textContent).not.toContain('Архивный ответ')
+    expect(item.textContent).not.toContain('###')
+    expect(item.querySelector('time')).toBeNull()
+    fireEvent.click(within(item).getByRole('button', { name: 'Развернуть' }))
+    expect(within(item).getByRole('heading', { name: 'Архивный ответ' }).tagName).toBe('H3')
+    expect(within(item).getByText('Конец').tagName).toBe('STRONG')
+    expect(item.textContent).toContain('текст')
+    expect(item.querySelector('time')).not.toBeNull()
 
     view.unmount()
     render(<App />)
     const restoredHistory = await screen.findByRole('complementary', { name: /история/i })
-    await waitFor(() => expect(within(restoredHistory).getByText(preview)).not.toBeNull())
-    expect(within(restoredHistory).queryByText(longAnswer)).toBeNull()
+    const restoredPrompt = await within(restoredHistory).findByRole('heading', { name: 'Длинный вопрос' })
+    const restoredItem = restoredPrompt.closest('li')!
+    expect(within(restoredItem).getByRole('button', { name: 'Развернуть' }).getAttribute('aria-expanded')).toBe('false')
+    expect(restoredItem.textContent).not.toContain('Архивный ответ')
+    expect(restoredItem.querySelector('time')).toBeNull()
   })
 
-  it('показывает короткий ответ полностью без кнопки раскрытия', async () => {
-    window.localStorage.setItem('ai-gate:history:' + sessionId, JSON.stringify([exchange('Вопрос')]))
+  it('раскрывает две карточки независимо', async () => {
+    window.localStorage.setItem('ai-gate:history:' + sessionId, JSON.stringify([
+      { ...exchange('Первый вопрос'), answer: 'Первый ответ' },
+      { ...exchange('Второй вопрос'), id: 'f4e5843b-e52d-4c2b-91c0-8a4dcfd28842', answer: 'Второй ответ' },
+    ]))
     render(<App />)
     const history = await screen.findByRole('complementary', { name: /история/i })
-    await waitFor(() => expect(within(history).getByText('Готовый ответ')).not.toBeNull())
-    expect(within(history).queryByRole('button', { name: /показать полностью/i })).toBeNull()
+    const first = (await within(history).findByRole('heading', { name: 'Первый вопрос' })).closest('li')!
+    const second = within(history).getByRole('heading', { name: 'Второй вопрос' }).closest('li')!
+
+    fireEvent.click(within(first).getByRole('button', { name: 'Развернуть' }))
+    expect(within(first).getByText('Первый ответ')).not.toBeNull()
+    expect(within(second).queryByText('Второй ответ')).toBeNull()
+    expect(within(second).getByRole('button', { name: 'Развернуть' }).getAttribute('aria-expanded')).toBe('false')
+
+    fireEvent.click(within(second).getByRole('button', { name: 'Развернуть' }))
+    fireEvent.click(within(first).getByRole('button', { name: 'Свернуть' }))
+    expect(within(first).queryByText('Первый ответ')).toBeNull()
+    expect(within(second).getByText('Второй ответ')).not.toBeNull()
   })
 })
+
 describe('Markdown в ответе', () => {
   it('показывает разметку текущего ответа и не создаёт HTML-элемент из сырого текста', async () => {
     vi.mocked(api.streamChat).mockImplementation(async (prompt) => ({
@@ -277,7 +326,7 @@ describe('Markdown в ответе', () => {
     ]))
     render(<App />)
     const history = await screen.findByRole('complementary', { name: /история/i })
-    fireEvent.click(await within(history).findByRole('button', { name: /показать полностью/i }))
+    fireEvent.click(await within(history).findByRole('button', { name: 'Развернуть' }))
 
     expect(within(history).getByText('Архив').tagName).toBe('STRONG')
     expect(within(history).getByText('Архив').closest('p')?.textContent).toContain('текст')

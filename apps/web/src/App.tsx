@@ -8,37 +8,32 @@ function countCodePoints(value: string): number {
   return Array.from(value.trim()).length
 }
 
-const HISTORY_PREVIEW_LENGTH = 180
-
 function HistoryItem({ item }: { item: LocalExchange }) {
   const [expanded, setExpanded] = useState(false)
-  const answerPoints = Array.from(item.answer)
-  const isLong = answerPoints.length > HISTORY_PREVIEW_LENGTH
-  const preview = answerPoints.slice(0, HISTORY_PREVIEW_LENGTH).join('') + '...'
 
   return (
     <li className="history-item">
-      <strong className="history-prompt">{item.prompt}</strong>
-      {isLong && !expanded ? (
-        <p className="history-preview">{preview}</p>
-      ) : (
-        <div className="history-answer markdown-body">
-          <ReactMarkdown skipHtml>{item.answer}</ReactMarkdown>
-        </div>
-      )}
-      {isLong && (
+      <div className="history-item-heading">
+        <h3 className="history-prompt">{item.prompt}</h3>
         <button
           type="button"
           className="history-toggle"
           aria-expanded={expanded}
           onClick={() => setExpanded((current) => !current)}
         >
-          {expanded ? 'Свернуть' : 'Показать полностью'}
+          {expanded ? 'Свернуть' : 'Развернуть'}
         </button>
+      </div>
+      {expanded && (
+        <>
+          <div className="history-answer markdown-body">
+            <ReactMarkdown skipHtml>{item.answer}</ReactMarkdown>
+          </div>
+          <time dateTime={item.createdAt}>
+            {new Date(item.createdAt).toLocaleString('ru-RU')}
+          </time>
+        </>
       )}
-      <time dateTime={item.createdAt}>
-        {new Date(item.createdAt).toLocaleString('ru-RU')}
-      </time>
     </li>
   )
 }
